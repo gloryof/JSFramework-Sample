@@ -99,6 +99,7 @@
             if (selectValue === "") {
 
                 self._lines.initData();
+                self._resultTable.reset();
 
                 return;
             }
