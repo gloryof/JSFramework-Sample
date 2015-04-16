@@ -1,11 +1,5 @@
 (function ($) {
 
-    var $form = $("#search-form");
-    var $area = $form.find(".area");
-    var $prefecture = $form.find(".prefecture");
-    var $lines = $form.find(".lines");
-    var $stationList = $(".station-list");
-
     var appendOptions = function ($targetSelect, itemValues) {
         $targetSelect.empty();
 
@@ -41,102 +35,137 @@
         }).done(doneFunc);
     };
 
-    $area.on("init-data", function (event, areaData) {
-        var $self = $(this);
+    var RailsSearcher = function ($form, $table) {
+        var self = this;
+        this._$form = $form;
+        this._$areas = $form.find(".area");
+        this._$prefecture = $form.find(".prefecture");
+        this._$lines = $form.find(".lines");
+        this._areas = new RailsSelector(this._$areas);
+        this._prefecture = new RailsSelector(this._$prefecture);
+        this._lines = new RailsSelector(this._$lines);
+        this._resultTable = new ResultTable($table);
 
-        var areaArray = areaData.area;
-        appendOptions($self, areaArray);
+        this.init = function () {
+            self._$areas.on("change", self._selectArea);
+            self._$prefecture.on("change", self._selectPrefecture);
+            self._$lines.on("change", self._selectLines);
 
-        $prefecture.trigger("load-data", $self.val());
-        $lines.trigger("init-data");
-    });
+            var apiParam = {method: "getAreas"};
 
-    $area.on("change", function (event) {
-        var $self = $(this);
+            callApi(
+                apiParam,
+                function (data) {
+                    self._areas.loadData(data.response.area);
+                    self._prefecture.initData();
+                    self._lines.initData();
+                    self._resultTable.reset();
+                }
+            );
+        };
 
-        $prefecture.trigger("load-data", $self.val());
-        $lines.trigger("init-data");
-    });
+        this._selectArea = function (event) {
 
-    $prefecture.on("load-data", function (event, areaName) {
-        var $self = $(this);
+            var selectValue = self._areas.getSelectValue();
 
-        if (areaName === "") {
-            setEmptyOption($self, "--");
-            return;
-        }
+            if (selectValue === "") {
 
-        callApi(
-            {
+                self._prefecture.initData();
+                self._lines.initData();
+                self._resultTable.reset();
+
+                return;
+            }
+
+            var apiParam = {
                 method: "getPrefectures",
-                area: areaName
-            },
-        function (data) {
-            var prefectureArray = data.response.prefecture;
-            appendOptions($self, prefectureArray);
-            $lines.trigger("load-data", $self.val());
-        }
-        );
-    });
+                area: selectValue
+            };
 
-    $prefecture.on("change", function (event) {
-        var $self = $(this);
+            callApi(
+                apiParam,
+                function (data) {
 
-        $lines.trigger("load-data", $self.val());
-    });
+                    self._prefecture.loadData(data.response.prefecture);
+                    self._lines.initData();
+                }
+            );
+        };
 
-    $lines.on("init-data", function (event) {
-        var $self = $(this);
-        setEmptyOption($self, "--");
-    });
+        this._selectPrefecture = function (event) {
 
-    $lines.on("load-data", function (event, prefectureName) {
-        var $self = $(this);
+            var selectValue = self._prefecture.getSelectValue();
 
-        if (prefectureName === "") {
-            setEmptyOption($self, "--");
-            return;
-        }
+            if (selectValue === "") {
 
-        callApi(
-            {
+                self._lines.initData();
+
+                return;
+            }
+
+            var apiParam = {
                 method: "getLines",
-                prefecture: prefectureName
-            },
-        function (data) {
-            var lineArray = data.response.line;
-            appendOptions($self, lineArray);
-        }
-        );
-    });
+                prefecture: selectValue
+            };
 
-    $lines.on("change", function (event) {
-        var $self = $(this);
+            callApi(
+                apiParam,
+                function (data) {
 
-        $stationList.trigger("load-data", $self.val());
-    });
+                    self._lines.loadData(data.response.line);
+                    self._resultTable.reset();
+                }
+            );
+        };
 
+        this._selectLines = function (event) {
 
-    $stationList.on("load-data", function (event, lineName) {
+            var selectValue = self._lines.getSelectValue();
 
-        var $self = $(this);
-        var $tbody = $self.find("tbody");
+            self._resultTable.reset();
 
-        $tbody.empty();
+            if (selectValue === "") {
+                return;
+            }
 
-        if (lineName === "") {
-            return;
-        }
-
-
-        callApi(
-            {
+            var apiParam = {
                 method: "getStations",
-                line: lineName
-            },
-        function (data) {
-            var stations = data.response.station;
-            $.each(stations, function (index, item) {
+                line: selectValue
+            };
+
+            callApi(
+                apiParam,
+                function (data) {
+
+                    self._resultTable.loadData(data.response.station);
+                }
+            );
+        };
+    };
+
+    var RailsSelector = function ($targetSelect) {
+        this._$target = $targetSelect;
+        this.getSelectValue = function () {
+            return this._$target.val();
+        };
+        this.loadData = function (dataArray) {
+            appendOptions(this._$target, dataArray);
+        };
+        this.initData = function () {
+            setEmptyOption(this._$target, "--");
+        };
+    };
+
+    var ResultTable = function ($targetTable) {
+        var self = this;
+        this._$table = $targetTable;
+        this._$tbody = $targetTable.find("tbody");
+        this.reset = function () {
+            this._$tbody.empty();
+        };
+        this.loadData = function (stationArray) {
+
+            $.each(stationArray, function (index, item) {
                 var $tr = $("<tr>");
 
                 $tr.append($("<td>").text(item.prefecture));
@@ -145,20 +174,13 @@
                 $tr.append($("<td>").text(item.x));
                 $tr.append($("<td>").text(item.y));
 
-                $tbody.append($tr);
+                self._$tbody.append($tr);
             });
-        }
-        );
-    });
+        };
+    };
 
     $(document).ready(function (event) {
-        callApi(
-            {
-                method: "getAreas"
-            },
-        function (data) {
-            $area.trigger("init-data", data.response);
-        }
-        );
+        var searcher = new RailsSearcher($("#search-form"), $(".station-list"));
+        searcher.init();
     });
 })($);
