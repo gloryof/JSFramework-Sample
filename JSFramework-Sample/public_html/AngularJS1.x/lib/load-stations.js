@@ -20,6 +20,20 @@ railsSearcher.controller("RailsCtrl", function ($scope, $http) {
     $scope.prefectureValue = null;
     $scope.lineValue = null;
 
+    var resetPrefectures = function () {
+        $scope.prefectures = [];
+        $scope.prefectureValue = null;
+    };
+
+    var resetLines = function () {
+        $scope.lines = [];
+        $scope.lineValue = null;
+    };
+
+    var resetStations = function () {
+        $scope.stations = [];
+    };
+
     $scope.init = function () {
         var param = {method: "getAreas"};
         callApi(
@@ -31,11 +45,12 @@ railsSearcher.controller("RailsCtrl", function ($scope, $http) {
     };
 
     $scope.selectArea = function () {
-        if ($scope.areaValue === null) {
-            $scope.prefectures = [];
-            $scope.lines = [];
-            $scope.rails = [];
 
+        resetPrefectures();
+        resetLines();
+        resetStations();
+
+        if ($scope.areaValue === null) {
             return;
         }
 
@@ -52,10 +67,11 @@ railsSearcher.controller("RailsCtrl", function ($scope, $http) {
     };
 
     $scope.selectPrefecture = function () {
-        if ($scope.prefectureValue === null) {
-            $scope.lines = [];
-            $scope.rails = [];
 
+        resetLines();
+        resetStations();
+
+        if ($scope.prefectureValue === null) {
             return;
         }
 
@@ -72,9 +88,10 @@ railsSearcher.controller("RailsCtrl", function ($scope, $http) {
     };
 
     $scope.selectLine = function () {
-        if ($scope.lineValue === null) {
-            $scope.rails = [];
 
+        resetStations();
+
+        if ($scope.lineValue === null) {
             return;
         }
 
