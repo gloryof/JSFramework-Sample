@@ -1,15 +1,85 @@
 var mediator = {};
 _.extend(mediator, Backbone.Events);
 
+var appendOptions = function ($targetSelect, itemValues) {
+
+    setEmptyOption($targetSelect, "--");
+    $.each(itemValues, function (index, item) {
+
+        var $option = $("<option/>");
+        $option.val(item);
+        $option.text(item);
+
+        $targetSelect.append($option);
+    });
+};
+var setEmptyOption = function ($targetSelect, label) {
+
+    $targetSelect.empty();
+
+    var $option = $("<option/>");
+    $option.val("");
+    $option.text(label);
+
+    $targetSelect.append($option);
+};
+
+var Area = Backbone.Model.extend({
+    defaults: {
+        value: "",
+        list: []
+    },
+    parse: function (data) {
+
+        return {
+            value: this.get("value"),
+            list: data.response.area
+        };
+    }
+});
+
+var Prefecture = Backbone.Model.extend({
+    defaults: {
+        value: "",
+        list: []
+    },
+    parse: function (data) {
+
+        return {
+            value: this.get("value"),
+            list: data.response.prefecture
+        };
+    },
+    reset: function () {
+        this.set("value", "");
+        this.set("list", []);
+    }
+});
+
+var Line = Backbone.Model.extend({
+    defaults: {
+        value: "",
+        list: []
+    },
+    parse: function (data) {
+
+        return {
+            value: this.get("value"),
+            list: data.response.line
+        };
+    },
+    reset: function () {
+        this.set("value", "");
+        this.set("list", []);
+    }
+});
+
 var SearchView = Backbone.View.extend({
     el: "form#search-form",
     condition: {
-        areaValue: "",
-        areas: [],
-        prefectureValue: "",
-        prefectures: [],
-        lineValue: "",
-        lines: []
+        area: new Area(),
+        prefecture: new Prefecture(),
+        line: new Line()
     },
     events: {
         "change .area": "changeArea",
@@ -20,126 +90,96 @@ var SearchView = Backbone.View.extend({
         var self = this;
         _.bindAll(this, "render", "changeArea", "changePrefecture", "changeLine");
 
-        $.ajax({
+        var $prefectures = this.$el.find(".prefecture");
+        appendOptions($prefectures, []);
+
+        var $lines = this.$el.find(".lines");
+        appendOptions($lines, []);
+
+        this.condition.area.fetch({
             data: {method: "getAreas"},
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json"
-        }).done(function (data) {
-            self.condition.areas = data.response.area;
-            self.render();
+            url: "http://express.heartrails.com/api/json",
+            success: this.render
         });
-
-        var $prefectures = this.$el.find(".prefecture");
-        this._appendOptions($prefectures, []);
-
-        var $lines = this.$el.find(".lines");
-        this._appendOptions($lines, []);
     },
     render: function () {
 
         var $areas = this.$el.find(".area");
-        this._appendOptions($areas, this.condition.areas);
-        $areas.val(this.condition.areaValue);
+        appendOptions($areas, this.condition.area.get("list"));
+        $areas.val(this.condition.area.get("value"));
 
-        if (this.condition.prefectureValue === "") {
+        if (this.condition.prefecture.get("value") === "") {
             var $prefectures = this.$el.find(".prefecture");
-            this._appendOptions($prefectures, this.condition.prefectures);
+            appendOptions($prefectures, this.condition.prefecture.get("list"));
         }
 
-        if (this.condition.lineValue === "") {
+        if (this.condition.line.get("value") === "") {
             var $lines = this.$el.find(".lines");
-            this._appendOptions($lines, this.condition.lines);
+            appendOptions($lines, this.condition.line.get("list"));
             mediator.trigger("resetStations");
         } else {
-            mediator.trigger("getStations", this.condition.lineValue);
+            mediator.trigger("getStations", this.condition.line.get("value"));
         }
     }
     ,
     changeArea: function (event) {
         var self = this;
 
-        this.condition.prefectures = [];
-        this.condition.lines = [];
+        var selectedArea = this.$el.find(".area").val();
+        this.condition.prefecture.reset();
+        this.condition.line.reset();
 
-        this.condition.prefectureValue = "";
-        this.condition.lineValue = "";
+        this.condition.area.set("value", selectedArea);
 
-        this.condition.areaValue = this.$el.find(".area").val();
-
-        if (this.condition.areaValue === "") {
+        if (selectedArea === "") {
 
             self.render();
             return;
         }
 
-        $.ajax({
+        this.condition.prefecture.fetch({
             data: {
                 method: "getPrefectures",
-                area: this.condition.areaValue
+                area: selectedArea
             },
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json"
-        }).done(function (data) {
-            self.condition.prefectures = data.response.prefecture;
-            self.render();
+            url: "http://express.heartrails.com/api/json",
+            success: this.render
         });
     },
     changePrefecture: function (event) {
         var self = this;
 
-        this.condition.lines = [];
-        this.condition.lineValue = "";
+        this.condition.line.reset();
 
-        this.condition.prefectureValue = this.$el.find(".prefecture").val();
+        var selectedPrefecture = this.$el.find(".prefecture").val();
+        this.condition.prefecture.set("value", selectedPrefecture);
 
-        if (this.condition.prefectureValue === "") {
+        if (selectedPrefecture === "") {
 
             self.render();
             return;
         }
 
-        $.ajax({
+        this.condition.line.fetch({
             data: {
                 method: "getLines",
-                prefecture: this.condition.prefectureValue
+                prefecture: selectedPrefecture
             },
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json"
-        }).done(function (data) {
-            self.condition.lines = data.response.line;
-            self.render();
+            url: "http://express.heartrails.com/api/json",
+            success: this.render
         });
     },
     changeLine: function (event) {
-        var self = this;
 
-        this.condition.lineValue = this.$el.find(".lines").val();
+        var selectedLine = this.$el.find(".lines").val();
+        this.condition.line.set("value", selectedLine);
         this.render();
-    },
-    _appendOptions: function ($targetSelect, itemValues) {
-
-        this._setEmptyOption($targetSelect, "--");
-        $.each(itemValues, function (index, item) {
-
-            var $option = $("<option/>");
-            $option.val(item);
-            $option.text(item);
-
-            $targetSelect.append($option);
-        });
-    },
-    _setEmptyOption: function ($targetSelect, label) {
-
-        $targetSelect.empty();
-
-        var $option = $("<option/>");
-        $option.val("");
-        $option.text(label);
-
-        $targetSelect.append($option);
     }
 });
 
