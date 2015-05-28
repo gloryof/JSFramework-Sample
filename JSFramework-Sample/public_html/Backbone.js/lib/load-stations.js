@@ -25,6 +25,7 @@ var setEmptyOption = function ($targetSelect, label) {
 };
 
 var Area = Backbone.Model.extend({
+    url: "http://express.heartrails.com/api/json",
     defaults: {
         value: "",
         list: []
@@ -39,6 +40,7 @@ var Area = Backbone.Model.extend({
 });
 
 var Prefecture = Backbone.Model.extend({
+    url: "http://express.heartrails.com/api/json",
     defaults: {
         value: "",
         list: []
@@ -57,6 +59,7 @@ var Prefecture = Backbone.Model.extend({
 });
 
 var Line = Backbone.Model.extend({
+    url: "http://express.heartrails.com/api/json",
     defaults: {
         value: "",
         list: []
@@ -100,7 +103,6 @@ var SearchView = Backbone.View.extend({
             data: {method: "getAreas"},
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json",
             success: this.render
         });
     },
@@ -146,7 +148,6 @@ var SearchView = Backbone.View.extend({
             },
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json",
             success: this.render
         });
     },
@@ -171,7 +172,6 @@ var SearchView = Backbone.View.extend({
             },
             dataType: "jsonp",
             method: "GET",
-            url: "http://express.heartrails.com/api/json",
             success: this.render
         });
     },
@@ -195,6 +195,7 @@ var SearchResult = Backbone.Model.extend({
 
 var SearchResults = Backbone.Collection.extend({
     model: SearchResult,
+    url: "http://express.heartrails.com/api/json",
     parse: function (result) {
 
         return result.response.station;
@@ -231,7 +232,6 @@ var SearchResultView = Backbone.View.extend({
     getStations: function (lineValue) {
 
         this.collection.fetch({
-            url: "http://express.heartrails.com/api/json",
             data: {
                 method: "getStations",
                 line: lineValue
