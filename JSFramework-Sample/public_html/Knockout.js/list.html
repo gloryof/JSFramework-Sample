@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>リスト</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <p>
+            Web APIは「<a href="http://express.heartrails.com/">HeartRails Express</a>」を使用させていただいています。<br>
+        </p>
+        <section>
+            <form id="search-form">
+                <fieldset>
+                    <legend>抽出条件</legend>
+                    <ul>
+                        <li>
+                            <select data-bind="options:areas, value: areaValue, optionsCaption: '--', event: { change: selectArea }"></select>
+                        </li>
+                        <li>
+                            <select data-bind="options:prefectures, value: prefectureValue, optionsCaption: '--', event: { change: selectPrefecture }"></select>
+                        </li>
+                        <li>
+                            <select data-bind="options:lines, value: lineValue, optionsCaption: '--', event: { change: selectLines }"></select>
+                        </li>
+                    </ul>
+                </fieldset>
+            </form>
+        </section>
+        <section>
+            <table class="station-list">
+                <thead>
+                    <tr>
+                        <th>都道府県</th>
+                        <th>路線名</th>
+                        <th>駅名</th>
+                        <th>経度</th>
+                        <th>緯度</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: stations ">
+                    <tr>
+                        <td data-bind="text: prefecture"></td>
+                        <td data-bind="text: line"></td>
+                        <td data-bind="text: name"></td>
+                        <td data-bind="text: x"></td>
+                        <td data-bind="text: y"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js" ></script>
+        <script src="https://code.jquery.com/jquery-2.1.3.min.js" ></script>
+        <script src="./lib/load-stations.js" ></script>
+    </body>
+</html>
